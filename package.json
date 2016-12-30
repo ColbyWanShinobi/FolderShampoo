@@ -1,0 +1,31 @@
+{
+  "name": "foldershampoo",
+  "version": "1.0.0",
+  "description": "Sort files from one directory into another",
+  "main": "folderShampoo.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ColbyWanShinobi/FolderShampoo.git"
+  },
+  "keywords": [
+    "file",
+    "sort",
+    "directory",
+    "folder",
+    "clean"
+  ],
+  "author": "Colby Butler",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/ColbyWanShinobi/FolderShampoo/issues"
+  },
+  "homepage": "https://github.com/ColbyWanShinobi/FolderShampoo#readme",
+  "dependencies": {
+    "image-size": "~0.5.0",
+    "mime": "~1.3.4",
+    "untildify": "~3.0.2"
+  }
+}
