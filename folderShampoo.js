@@ -1,4 +1,4 @@
-#! /usr/local/bin/node
+#!/usr/bin/env node
 'use strict';
 
 const fs = require('fs');
@@ -6,6 +6,9 @@ const is = require('image-size');
 const path = require('path');
 const mime = require('mime');
 const untildify = require('untildify');
+const util = require('util');
+const readdir = util.promisify(fs.readdir);
+const sizeOf = util.promisify(require('image-size'));
 
 const sep = path.sep;
 console.log('Found OS specific path seperator: ' + sep);
@@ -25,47 +28,63 @@ let mimeMap = {
   }
 }
 
-getFileNames (sourceDir)
+main();
+
+
+
+/*getFileNames (sourceDir)
   .then( fileNames => {
     fileNames.forEach(fileName => {
-      getFileData(fileName)
-        .then(imageDimCheck)
-        .then(processFile);
+      console.log(fileName);
+      //getFileData(fileName)
+      //  .then(imageDimCheck)
+      //  .then(processFile);
     });
   })
   .then( data => {
     console.log('Done');
   });
+*/
+
+/**/
+
+async function main() {
+  try {
+    let fileNames = await getFileNames(sourceDir);
+    //console.log(fileNames)
+    for (let fileName of fileNames) {
+      console.log(fileName);
+      let fileData = await getFileData(fileName);
+      fileData = await imageDimCheck(fileData);
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 
-  /**/
-
-
-function getFileNames (sourceDir) {
-  return new Promise (function (resolve, reject) {
-    fs.readdir(sourceDir, (err, fileNames) => {
-      if (err) throw err;
-      console.log('Gathered a list of ' + fileNames.length + ' filenames');
-      resolve(fileNames);
-    });
-  });
-
-
-
-
-
+async function getFileNames (sourceDir) {
+  try {
+    const fileNames = await readdir(sourceDir);
+    console.log('Gathered a list of ' + fileNames.length + ' filenames');
+    return fileNames;
+  } catch (error) {
+    throw error;
+  }
 }
 
 
 
-function getFileData (fileName) {
-  return new Promise (function (resolve, reject) {
+async function getFileData (fileName) {
+  try {
     console.log('Examining file: ' + fileName);
     let ext = path.extname(fileName);
     let fullName = sourceDir + sep + fileName;
     let dirName = path.dirname(fileName);
-    let mimeType = mime.lookup(fileName);
+    let mimeType = mime.getType(fileName) || 'none';
+    console.log(`MIMETYPE: ${mimeType}`)
     let fileType = mimeType.match(/^\w+/);
+    console.log(`FILETYPE: ${fileType}`)
 
     let fileObj = {
       fullName: fullName,
@@ -74,33 +93,26 @@ function getFileData (fileName) {
       mimeType: mimeType,
       fileType: fileType[0]
     }
-    resolve(fileObj);
-  });
+
+    return fileObj;
+  } catch (error) {
+    throw error;
+  }
 }
 
-function imageDimCheck (fileObj) {
-  return new Promise (function (resolve, reject) {
-    console.log('Getting image dimensions for: ' + fileObj.fullName);
+async function imageDimCheck (fileObj) {
+  let newFileObj = fileObj;
+  try {
     if (fileObj.fileType == 'image') {
-      //console.log('A');
-      is(fileObj.fullName, function (err, dimensions) {
-        //if (err) {
-          //console.log('Found unsupported image: ' + fileObj.fullName);
-        //} //else {
-          //console.log('B');
-          fileObj.dimensions = dimensions;
-          //console.log(fileObj);
-          //console.log('2');
-        //}
-        return fileObj;
-      })
-      .then (fileObj => {
-        console.log('BANANA!');
-        resolve(fileObj);
-      });
+      console.log('Getting image dimensions for: ' + fileObj.fullName);
+      const dimensions = await sizeOf(fileObj.fullName);
+      console.log(`Dimensions for image: ${fileObj.fullName}: ${dimensions.width} x ${dimensions.height}`)
+      newFileObj.dimensions = dimensions;
     }
-    //resolve(fileObj);
-  });
+    return newFileObj;
+  } catch (error) {
+    console.log(error)
+    return newFileObj  }
 }
 
 function processFile(fileObj) {
